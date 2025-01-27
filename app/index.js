@@ -11,8 +11,7 @@ const Index = () => {
         <Text className="text-2xl font-bold text-white">Welcome to Quest EduCare</Text>
         <TouchableOpacity
           className="bg-blue-500 p-2 rounded-lg mt-4"
-          onPress={() => router.push('Mainpage')}
-          
+          onPress={() => router.push('login')} 
           >
           <Text className="text-white font-bold">Get Started</Text>
           </TouchableOpacity>

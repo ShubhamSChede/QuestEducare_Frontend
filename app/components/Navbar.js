@@ -20,6 +20,7 @@ const Navbar = () => {
   };
 
   const subjects = [
+    { name: 'Mainpage', icon: <Ionicons name="person-circle-outline" size={24} color="white" /> },
     { name: 'Maths', icon: <AntDesign name="calculator" size={24} color="white" /> },
     { name: 'Physics', icon: <MaterialCommunityIcons name="atom" size={24} color="white" /> },
     { name: 'Chemistry', icon: <SimpleLineIcons name="chemistry" size={24} color="white" /> },

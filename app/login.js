@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginPage = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -13,6 +18,12 @@ const LoginPage = () => {
       return;
     }
 
+    if (!email.includes('@')) {
+      Alert.alert('Validation Error', 'Please enter a valid email address');
+      return;
+    }
+
+    setLoading(true);
     try {
       const response = await fetch('https://questeducare.onrender.com/api/auth/login', {
         method: 'POST',
@@ -20,20 +31,30 @@ const LoginPage = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
-        credentials: 'include', // Add this
+        credentials: 'include', // Ensures cookies are included
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        throw new Error(data.message || 'Login failed');
       }
 
-      const data = await response.json();
+      // Store the token
+      try {
+        await AsyncStorage.setItem('userToken', data.token);
+        await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+      } catch (storageError) {
+        console.error('Error storing token:', storageError);
+      }
+
       Alert.alert('Login Successful', `Welcome, ${data.user.name}`);
       // Navigate to MainPage
-      navigation.navigate('Mainpage');
+      router.push('Mainpage');
     } catch (error) {
-      Alert.alert('Login Failed', error.message);
+      Alert.alert('Login Failed', error.message || 'An error occurred during login');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,21 +69,49 @@ const LoginPage = () => {
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
+        autoComplete="email"
+        placeholderTextColor="#9ca3af"
       />
 
-      <TextInput
-        className="w-full bg-white p-3 rounded-lg shadow-sm mb-6 border border-gray-300"
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <View className="w-full relative mb-6">
+        <TextInput
+          className="w-full bg-white p-3 rounded-lg shadow-sm border border-gray-300 pr-12"
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+          autoComplete="password"
+          placeholderTextColor="#9ca3af"
+        />
+        <TouchableOpacity
+          onPress={() => setShowPassword(!showPassword)}
+          className="absolute right-3 top-3"
+        >
+          <Ionicons 
+            name={showPassword ? "eye-off" : "eye"} 
+            size={24} 
+            color="#6b7280" 
+          />
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
-        className="w-full bg-blue-500 p-3 rounded-lg"
+        className={`w-full bg-blue-600 p-3 rounded-lg ${loading ? 'opacity-50' : ''}`}
         onPress={handleLogin}
+        disabled={loading}
       >
-        <Text className="text-center text-white font-medium">Login</Text>
+        {loading ? (
+          <ActivityIndicator color="#ffffff" />
+        ) : (
+          <Text className="text-center text-white font-medium">Login</Text>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => router.push('Mainpage')}
+        className="mt-4"
+      >
+        <Text className="text-center text-blue-600 underline">Don't have an account? Sign up</Text>
       </TouchableOpacity>
     </View>
   );
